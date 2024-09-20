@@ -5,6 +5,7 @@
 #include <errno.h>
 #include <string.h>
 #include <stdbool.h>
+#include <unistd.h>
 
 void list_directory(const char *path, bool show_all, bool long_format) {
     DIR *dir = opendir(path);
@@ -63,24 +64,27 @@ void list_directory(const char *path, bool show_all, bool long_format) {
 int main(int argc, char *argv[]) {
     const char *path = ".";  // По умолчанию использовать текущую директорию
     bool show_all = false;   // Флаг для -a (показывать скрытые файлы)
-
-bool long_format = false; // Флаг для -l (длинный формат)
+    bool long_format = false; // Флаг для -l (длинный формат)
 
     // Обработка аргументов командной строки
-    for (int i = 1; i < argc; i++) {
-        if (strcmp(argv[i], "ls") == 0) {
-            continue; // Пропускаем команду "ls"
+    int opt;
+    while ((opt = getopt(argc, argv, "al")) != -1) {
+        switch (opt) {
+            case 'a':
+                show_all = true;
+                break;
+            case 'l':
+                long_format = true;
+                break;
+            default: /* '?' */
+                fprintf(stderr, "Usage: %s [-a] [-l] [directory]\n", argv[0]);
+                exit(EXIT_FAILURE);
         }
-        else if (strcmp(argv[i], "-a") == 0) {
-            show_all = true; // Устанавливаем флаг для отображения скрытых файлов
-        }
-        else if (strcmp(argv[i], "-l") == 0) {
-            long_format = true; // Устанавливаем флаг для длинного формата
-        }
-        else {
-            // Если аргумент не является опцией, то это путь к директории
-            path = argv[i];
-        }
+    }
+
+    // Если после флагов остался аргумент - это путь к директории
+    if (optind < argc) {
+        path = argv[optind];
     }
 
     // Вызываем функцию для вывода содержимого директории
